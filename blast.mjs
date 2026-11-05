@@ -16,7 +16,16 @@ const METHOD = (opt('method', 'GET') || 'GET').toUpperCase();
 const BODY = opt('body', null);
 const u = new URL(target);
 const mod = u.protocol === 'http:' ? http : https;
+const RANDOM = argv.includes('--random');
 const agent = new mod.Agent({ keepAlive: true, maxSockets: CONC, maxFreeSockets: CONC });
+
+// --random: her istege rastgele parametre ekler, onbellegi atlatir.
+const nextUrl = () => {
+  if (!RANDOM) return u;
+  const x = new URL(u.href);
+  x.searchParams.set('r', Math.random().toString(36).slice(2));
+  return x;
+};
 
 const lat = [];
 const codes = new Map();
@@ -28,7 +37,7 @@ const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
 function one() {
   return new Promise((resolve) => {
     const s = performance.now();
-    const req = mod.request(u, {
+    const req = mod.request(nextUrl(), {
       method: METHOD,
       agent,
       headers: {

